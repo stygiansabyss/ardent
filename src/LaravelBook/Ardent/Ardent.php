@@ -306,8 +306,12 @@ abstract class Ardent extends Model {
             case self::HAS_ONE:
             case self::HAS_MANY:
             case self::BELONGS_TO:
-                $verifyArgs(array('foreignKey'));
-                return $this->$relationType($relation[1], $relation['foreignKey']);
+                $verifyArgs(array('foreignKey', 'orderBy'));
+                $relationship = $this->$relationType($relation[1], $relation['foreignKey']);
+
+                $relationship = $this->relationshipOrderBy($relationship, $relation['orderBy']);
+
+                return $relationship;
 
             case self::BELONGS_TO_MANY:
                 $verifyArgs(array('table', 'foreignKey', 'otherKey'));
@@ -316,17 +320,37 @@ abstract class Ardent extends Model {
                     $relationship->withPivot($relation['pivotKeys']);
                 if(isset($relation['timestamps']) && $relation['timestamps']==true)
                     $relationship->withTimestamps();
+
+                $relationship = $this->relationshipOrderBy($relationship, $relation['orderBy']);
+
                 return $relationship;
 
             case self::MORPH_TO:
                 $verifyArgs(array('name', 'type', 'id'));
-                return $this->$relationType($relation['name'], $relation['type'], $relation['id']);
+                $relationship = $this->$relationType($relation['name'], $relation['type'], $relation['id']);
+
+                $relationship = $this->relationshipOrderBy($relationship, $relation['orderBy']);
+
+                return $relationship;
 
             case self::MORPH_ONE:
             case self::MORPH_MANY:
                 $verifyArgs(array('type', 'id'), array('name'));
-                return $this->$relationType($relation[1], $relation['name'], $relation['type'], $relation['id']);
+                $relationship = $this->$relationType($relation[1], $relation['name'], $relation['type'], $relation['id']);
+
+                $relationship = $this->relationshipOrderBy($relationship, $relation['orderBy']);
+
+                return $relationship;
         }
+    }
+
+    public function relationshipOrderBy($relationship, $orderBy)
+    {
+        if (isset($orderBy[0])) {
+            $relationship->orderBy($orderBy[0], $orderBy[1]);
+        }
+
+        return $relationship;
     }
 
     /**
